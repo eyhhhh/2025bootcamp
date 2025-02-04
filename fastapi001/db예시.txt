@@ -1,0 +1,33 @@
+SignupParams
+{
+  "login_id": "",
+  "password": "",
+  "name": ""
+}
+
+SigninParams
+{
+  "login_id": "",
+  "password": ""
+}
+
+Post
+{
+  "id": 1,
+  "title": "",
+  "body": "",
+  "created_at": 123456,
+  "view_count": 12,
+  "published": false
+}
+User
+{
+  "id": 1,
+  "login_id": "",
+  "password": "",
+  "is_blocked": false,
+  "login_cnt": 12,
+  "last_login":0000,
+  "created_at": 1223
+}
+
