@@ -1,11 +1,21 @@
 import time
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.models.post import *
 from app.models.shared import *
+from app.dependencies import get_db_session
+
 
 router = APIRouter(
   prefix="/v1/posts" # 모든 경로 앞에 추가
 )
+
+@router.post('/')
+def create_post(post: Post, db = Depends(get_db_session)):
+  post.created_at = int(time.time())
+  db.add(post)
+  db.commit()
+  db.refresh(post)
+  return post
   
 # 게시물 목록
 @router.get('/')

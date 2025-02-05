@@ -7,13 +7,12 @@ class PageDir(Enum):
   NEXT = "next"
   PREV = "prev"
 
-@dataclass
 class Post(SQLModel, table=True):
-  id: int | None = Field(primary_key=True)
-  title: str
-  body: str
+  id: int = Field(primary_key=True)
   created_at: int = Field(index=True)
   published: bool = Field(index=True)
+  title: str
+  body: str
   
 
 @dataclass
