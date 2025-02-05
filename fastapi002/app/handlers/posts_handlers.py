@@ -25,7 +25,7 @@ def create_post(post: PostReq, db = Depends(get_db_session)):
   
 # 게시물 목록
 @router.get('/')
-def get_posts(page: int=1, limit: int=2, db=Depends(get_db_session)):
+def get_posts(page: int=1, limit: int=2, db=Depends(get_db_session)) -> PostResp:
   if page < 1:
     page = 1
   if limit < 1:
@@ -38,15 +38,19 @@ def get_posts(page: int=1, limit: int=2, db=Depends(get_db_session)):
     select(Post).offset(nOffset).limit(limit)
   ).all()
   
-  return posts
+  resp = PostResp(posts = posts)
+  return resp
+
 
 # 게시물 보기
 @router.get('/{post_id}')
-def get_post(post_id: int, db=Depends(get_db_session)):
+def get_post(post_id: int, db=Depends(get_db_session))->PostResp:
   post = db.get(Post, post_id)
   if not post:
     raise HTTPException(status_code=404, detail="Not Found")
-  return [post]
+  
+  resp = PostResp(posts=[post])
+  return resp
 
 
 # 게시물 수정

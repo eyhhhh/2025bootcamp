@@ -22,7 +22,7 @@ class Post(SQLModel, table=True):
   body: str
 
 @dataclass
-class PostsResp:
+class PostResp:
   posts: list[Post]
   err_msg: str | None = None
 
