@@ -4,7 +4,7 @@ from app.models.post import *
 from app.models.shared import *
 from app.dependencies import get_db_session
 from sqlmodel import select
-
+from dataclasses import asdict 
 
 router = APIRouter(
   prefix="/v1/posts" # 모든 경로 앞에 추가
@@ -20,7 +20,7 @@ def create_post(post: PostReq, db = Depends(get_db_session)):
   postModel.published = post.published
   db.add(postModel)
   db.commit()
-  db.refresh(postModel)
+  db.refresh(postModel) # db에 삽입된 값을 불러오는 것
   return postModel
   
 # 게시물 목록
@@ -50,18 +50,29 @@ def get_post(post_id: int, db=Depends(get_db_session)):
 
 
 # 게시물 수정
-@router.post('/{post_id}')
-def update_post(post_id: int, params: UpdatePostReq) -> PostsResp:
-  now = int(time.time())
-  return PostsResp(
-    posts = [
-      Post(id=post_id, title=params.title, body=params.body, created_at=now, published=params.publish)
-    ]
-  )
+@router.put('/{post_id}') # or PATCH
+def update_post(post_id: int, reqBody: PostReq,
+                db=Depends(get_db_session)):
+  oldPost = db.get(Post,post_id)
+  if not oldPost:
+    raise HTTPException(status_code=404, detail="Post not found")
+  
+  dicToUpdate = asdict(reqBody) # 딕셔너리로 변환
+  oldPost.sqlmodel_update(dicToUpdate)
+  db.add(oldPost)
+  db.commit() # 꼭 해주기
+  db.refresh(oldPost)  
+  
+  return oldPost
+
 
 # 게시물 삭제
 @router.delete('/{post_id}')
-def delete_post(post_id: int) -> dict:
-  return(
-    ResultResp(ok=True)
-  )
+def delete_post(post_id: int, db=Depends(get_db_session)):
+  post = db.get(Post, post_id)
+  if not post:
+    raise HTTPException(status_code=404, detail="Post not found")
+  db.delete(post)
+  db.commit() # 트랜잭션 종료
+  
+  return {'ok': True}
