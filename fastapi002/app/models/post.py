@@ -1,18 +1,20 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+from sqlmodel import Field, SQLModel
 
 class PageDir(Enum):
   NEXT = "next"
   PREV = "prev"
 
 @dataclass
-class Post:
-  id: int
+class Post(SQLModel, table=True):
+  id: int | None = Field(primary_key=True)
   title: str
   body: str
-  created_at: int
-  published: bool
+  created_at: int = Field(index=True)
+  published: bool = Field(index=True)
+  
 
 @dataclass
 class PostsResp:
