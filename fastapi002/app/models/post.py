@@ -7,13 +7,19 @@ class PageDir(Enum):
   NEXT = "next"
   PREV = "prev"
 
+@dataclass
+class PostReq:
+  title: str
+  body: str
+  published: bool
+
+# db 작업시 사용
 class Post(SQLModel, table=True):
-  id: int = Field(primary_key=True)
+  id: int = Field(primary_key=True) # unique해야함
   created_at: int = Field(index=True)
   published: bool = Field(index=True)
   title: str
   body: str
-  
 
 @dataclass
 class PostsResp:
