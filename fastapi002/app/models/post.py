@@ -1,25 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-from sqlmodel import Field, SQLModel
+from app.services.post_service import *
 
 class PageDir(Enum):
   NEXT = "next"
   PREV = "prev"
-
-@dataclass
-class PostReq:
-  title: str
-  body: str
-  published: bool
-
-# db 작업시 사용
-class Post(SQLModel, table=True):
-  id: int = Field(primary_key=True) # unique해야함
-  created_at: int = Field(index=True)
-  published: bool = Field(index=True)
-  title: str
-  body: str
 
 @dataclass
 class PostResp:

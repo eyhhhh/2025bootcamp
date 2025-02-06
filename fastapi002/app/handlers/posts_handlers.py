@@ -1,10 +1,10 @@
-import time
 from fastapi import APIRouter, Depends, HTTPException
 from app.models.post import *
 from app.models.shared import *
 from app.dependencies import get_db_session
 from sqlmodel import select
 from dataclasses import asdict 
+from app.services.post_service import *
 
 router = APIRouter(
   prefix="/v1/posts" # 모든 경로 앞에 추가
@@ -12,40 +12,27 @@ router = APIRouter(
 
 # 게시물 등록
 @router.post('/')
-def create_post(post: PostReq, db = Depends(get_db_session)):
-  postModel = Post()
-  postModel.title = post.title
-  postModel.body = post.body
-  postModel.created_at = int(time.time())
-  postModel.published = post.published
-  db.add(postModel)
-  db.commit()
-  db.refresh(postModel) # db에 삽입된 값을 불러오는 것
-  return postModel
+def create_post(post: PostReq, db = Depends(get_db_session), postService: PostService = Depends()):
+  return postService.create_post(db, post)
+
   
 # 게시물 목록
 @router.get('/')
-def get_posts(page: int=1, limit: int=2, db=Depends(get_db_session)) -> PostResp:
-  if page < 1:
-    page = 1
-  if limit < 1:
-    return []
-  if limit > 2:
-    limit = 2
-    
-  nOffset = (page-1) * limit
-  posts = db.exec(
-    select(Post).offset(nOffset).limit(limit)
-  ).all()
-  
-  resp = PostResp(posts = posts)
+def get_posts(page: int=1, limit: int=10, db=Depends(get_db_session), 
+              postService: PostService = Depends()) -> PostResp:
+  if limit > 10:
+      limit = 10
+      
+  resp = PostResp(posts=[])
+  resp.posts = postService.get_posts(db, page, limit)
   return resp
 
 
 # 게시물 보기
 @router.get('/{post_id}')
-def get_post(post_id: int, db=Depends(get_db_session))->PostResp:
-  post = db.get(Post, post_id)
+def get_post(post_id: int, db=Depends(get_db_session),
+              postService: PostService = Depends())->PostResp:
+  post = postService.get_post(db, post_id)
   if not post:
     raise HTTPException(status_code=404, detail="Not Found")
   
@@ -56,27 +43,26 @@ def get_post(post_id: int, db=Depends(get_db_session))->PostResp:
 # 게시물 수정
 @router.put('/{post_id}') # or PATCH
 def update_post(post_id: int, reqBody: PostReq,
-                db=Depends(get_db_session)):
-  oldPost = db.get(Post,post_id)
-  if not oldPost:
+                db=Depends(get_db_session), postService: PostService = Depends()):
+  post,resultCode = postService.update_post(db, post_id, reqBody)
+  
+  if resultCode == RESULT_CODE.NOT_FOUND:
     raise HTTPException(status_code=404, detail="Post not found")
+  if resultCode == RESULT_CODE.FAILED:
+    raise HTTPException(status_code=500, detail="Internal server error")
   
-  dicToUpdate = asdict(reqBody) # 딕셔너리로 변환
-  oldPost.sqlmodel_update(dicToUpdate)
-  db.add(oldPost)
-  db.commit() # 꼭 해주기
-  db.refresh(oldPost)  
-  
-  return oldPost
+  return post
 
 
 # 게시물 삭제
 @router.delete('/{post_id}')
-def delete_post(post_id: int, db=Depends(get_db_session)):
-  post = db.get(Post, post_id)
-  if not post:
+def delete_post(post_id: int, db=Depends(get_db_session),
+                postService: PostService = Depends()):
+  resultCode = postService.delete_post(db, post_id)
+  
+  if resultCode == RESULT_CODE.NOT_FOUND:
     raise HTTPException(status_code=404, detail="Post not found")
-  db.delete(post)
-  db.commit() # 트랜잭션 종료
+  if resultCode == RESULT_CODE.FAILED:
+    raise HTTPException(status_code=500, detail="Internal server error")
   
   return {'ok': True}
