@@ -31,6 +31,3 @@ async def vote(member_id: Annotated[int, Path(ge=0, le=2)],  # Path parameter검
 async def get_scores(service=Depends(VoteService), redis=Depends(get_redis)):
   scores=await service.score(redis)
   return scores
-
-@router.post('/{id}')
-async def store
