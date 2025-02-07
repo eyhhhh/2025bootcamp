@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, conint, SecretStr
 from typing import Optional, Literal, Callable
 import json
+from datetime import date, datetime, time, timedelta
 
 class Addr:
   country: str
@@ -51,3 +52,22 @@ def int_to_str(val: int)->str:
 
 m = Methods(on_strap=int_to_str)
 m.on_strap(100)
+
+class TestModel(BaseModel):
+  age: conint(gt=15, lt=150)
+  
+try:
+  print(TestModel(age=20))
+  print(TestModel(age=200))
+except Exception as e:
+  print(e)
+  
+class SecretUser(BaseModel):
+  login_id: str
+  pwd: SecretStr
+  
+sUser = SecretUser(login_id='abcd', pwd='1234')
+if sUser.pwd == '1234':
+  print(True)
+else:
+  print(False)
