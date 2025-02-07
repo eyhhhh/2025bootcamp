@@ -18,3 +18,15 @@ class VoteService:
     # ZRANGE(key,start,stop,[WITHSCORES],[REV]):
     scores = await redis.zrevrange(VOTE_KEY, 0, -1)
     return scores
+  
+  async def score_of(self, redis, member_name):
+    score = await redis.zscore(VOTE_KEY, member_name)
+    return score
+
+  async def phone_exists(self, redis, phone):
+    return await redis.exists(f'VOTE#{phone}')
+  
+  async def set_phone(self, redis, phone):
+    await redis.set(f'VOTE#{phone}',1)
+    
+  
