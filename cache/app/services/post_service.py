@@ -1,4 +1,4 @@
-
+# 서비스 계층 - 어떤 서비스를 하는 함수들을 정의
 from dataclasses import asdict
 from sqlmodel import (
     Session, select

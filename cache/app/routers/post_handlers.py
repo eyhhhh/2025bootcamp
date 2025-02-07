@@ -3,7 +3,9 @@ from fastapi import (
 )
 from app.models.post_models import *
 from app.dependencies.sqlite_db import *
+from app.dependencies.redis_db import get_redis
 from app.services.post_service import PostService
+from app.services.redis_service import RedisService
 
 router = APIRouter()
 
@@ -26,25 +28,41 @@ def get_posts(page: int=1,
     return resp
 
 @router.get("/posts/{post_id}")
-def get_post(post_id: int, 
-            db=Depends(get_db_session),
-            postService: PostService = Depends()) -> PostResp:
+async def get_post(post_id: int, 
+            db=Depends(get_db_session), # 의존성 주입 
+            redis=Depends(get_redis),
+            postService: PostService = Depends(),
+            redisService=Depends(RedisService)) -> PostResp:
+    
+    cachedPost = redisService.get_post(redis, post_id)
+    if cachedPost is not None:
+      return PostResp([cachedPost])
+    
     post = postService.get_post(db, post_id)
     if not post:
         raise HTTPException(status_code=404,
                             detail="Not Found")
+        
+    # add cache
+    await redisService.add_post(redis, post)
+    
     resp = PostResp(posts=[post])
     return resp
 
 @router.delete("/posts/{post_id}")
-def delete_post(post_id: int,
+async def delete_post(post_id: int,
             db=Depends(get_db_session),
-            postService: PostService = Depends()):
+            redis=Depends(get_redis),
+            postService: PostService = Depends(),
+            redisService=Depends(RedisService)):
     
     resultCode = postService.delete_post(db, post_id)
     if resultCode == RESULT_CODE.NOT_FOUND:
         raise HTTPException(status_code=404,
                             detail="not found")
+    
+    await redisService.delete_post(redis, post_id)
+    
     return {
         'ok': True
     }
@@ -53,7 +71,9 @@ def delete_post(post_id: int,
 def update_post(post_id:int, 
             reqBody: PostReq,
             db=Depends(get_db_session),
-            postService: PostService = Depends()):
+            redis=Depends(get_redis),
+            postService: PostService = Depends(),
+            redisService=Depends(RedisService)):
     post, code = postService.update_post(db, post_id, reqBody)
     if code == RESULT_CODE.NOT_FOUND:
         raise HTTPException(status_code=404,
@@ -61,6 +81,9 @@ def update_post(post_id:int,
     if code == RESULT_CODE.FAILED:
         raise HTTPException(status_code=500,
                             detail="internal server error")
+        
+    redisService.update_post(redis, post_id)
+    
     return post
 
 
