@@ -41,10 +41,10 @@ class AuthService:
   def get_user_by_name(self, db: Session, login_id: str)-> User|None:
     stmt = select(User).where(User.login_id==login_id)
     results = db.exec(stmt)
-    
-    if len(results) > 0:
-      return results[0]
+    for user in results:
+        return user
     return None
+
     
   # 4. 로그인API에서 사용할 DB로직 구현
   # DB에 저장된 사용자 정보 불러옴

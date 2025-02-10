@@ -18,5 +18,13 @@ def auth_signup(req: AuthSignupReq,
   return user
 
 @router.post('/signin')
-def auth_signin():
-  pass
+def auth_signin(req: AuthSignupReq,
+                db=Depends(get_db_session),
+                jwtutil: JWTUtil=Depends(JWTUtil),
+                authService: AuthService=Depends(AuthService)):
+  user = authService.signin(db, req.login_id, req.pwd)
+  if not user:
+    raise HTTPException(status_code=401, detail="로그인 실패")
+  
+  user.access_token = jwtutil.create_token(user.model_dump())
+  return user
