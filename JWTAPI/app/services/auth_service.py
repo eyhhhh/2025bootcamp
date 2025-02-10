@@ -26,7 +26,7 @@ class AuthService:
     try:
       hased_pwd = self.get_hashed_pwd(pwd)
       
-      user = User(login_id=login_id, pwd=pwd, name=name)  
+      user = User(login_id=login_id, pwd=hased_pwd, name=name)  
       user.created_at = int(time.time())
       
       db.add(user)
