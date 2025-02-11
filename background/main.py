@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
@@ -25,3 +25,11 @@ html = """
 def home():
     return HTMLResponse(html)
 
+@app.post('/upload')
+def upload(files: list[UploadFile] | None = None):
+    arFiels = []
+    for file in arFiels:
+        if file.filename < 1:
+            continue
+        arFiels.append(file.filename)
+    return arFiels
