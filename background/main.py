@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, BackgroundTasks
 from fastapi.responses import HTMLResponse
+import os
 
 app = FastAPI()
 
@@ -25,11 +26,33 @@ html = """
 def home():
     return HTMLResponse(html)
 
-@app.post('/upload')
-def upload(files: list[UploadFile] | None = None):
-    arFiels = []
-    for file in arFiels:
-        if file.filename < 1:
+def thumbnails(files: dict[str, bytes]):
+    pass
+
+def save_file(files: dict[str, bytes]):
+    for filename in files:
+        fileData = files[filename]
+        
+        strPath = os.path.join('files', file.filename) # file\filename, file/filename
+        try:
+            with open(strPath, 'wb') as f:
+                f.write(fileData)
+        except Exception as e:
+            print(e) 
             continue
-        arFiels.append(file.filename)
-    return arFiels
+
+@app.post('/upload')
+def upload(back_tasks: BackgroundTasks,
+           files: list[UploadFile] | None = None):
+    
+    filesToSave: dict[str, bytes] = {}
+    for file in files:
+        if len(file.filename) < 1:
+            continue
+        filesToSave[file.filename] = file.file.read()
+
+    back_tasks.add_task(save_file, filesToSave)
+
+    return {
+        'files': len(filesToSave)
+    }
